@@ -128,7 +128,7 @@ if __name__ == '__main__':
             perturbed_data = data.clone()
             perturbed_data.to(device)
             fix_model.train()
-            fix_model.dropout = sigma
+            fix_model.set_dropout(sigma)
             entropy = []
             for _ in range(num_samples):
                 with torch.no_grad():

@@ -21,6 +21,11 @@ class GCNmf(nn.Module):
         self.gc1.reset_parameters()
         self.gc2.reset_parameters()
 
+    def set_dropout(self, dropout):
+        self.dropout = dropout
+        self.gc1.dropout = dropout
+        self.gc2.dropout = dropout
+
     def forward(self, data):
         x, adj = data.features, data.adj
         x = self.gc1(x, adj)
