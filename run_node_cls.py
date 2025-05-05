@@ -112,6 +112,7 @@ if __name__ == '__main__':
             # print(fix_model)
             # Оценка PU
             fix_model.eval()
+            fix_model.set_eval()
             with torch.no_grad():
                 log_probs = fix_model(noisy_data)
                 # print("out", out.shape)
@@ -128,6 +129,7 @@ if __name__ == '__main__':
             perturbed_data = data.clone()
             perturbed_data.to(device)
             fix_model.train()
+            fix_model.set_train()
             fix_model.set_dropout(sigma)
             entropy = []
             for _ in range(num_samples):

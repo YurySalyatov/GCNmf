@@ -26,6 +26,14 @@ class GCNmf(nn.Module):
         self.gc1.dropout = dropout
         self.gc2.dropout = dropout
 
+    def set_eval(self):
+        self.gc1.eval()
+        self.gc2.eval()
+
+    def set_train(self):
+        self.gc1.train()
+        self.gc2.train()
+
     def forward(self, data):
         x, adj = data.features, data.adj
         x = self.gc1(x, adj)
