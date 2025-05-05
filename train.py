@@ -51,7 +51,7 @@ class EarlyStopping:
 
 
 class NodeClsTrainer:
-    def __init__(self, data, model, params, niter=100, verbose=False):
+    def __init__(self, data, model, params, niter=100, verbose=False, save_path="trained_model/without_noisy.pkl"):
         self.data = data
         self.model = model
         self.optimizer = Adam(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
@@ -65,6 +65,7 @@ class NodeClsTrainer:
             self.stop_checker = EarlyStopping(params['patience'], verbose)
 
         self.data.to(device)
+        self.save_path = save_path
 
     def reset(self):
         self.model.to(device).reset_parameters()
@@ -115,7 +116,7 @@ class NodeClsTrainer:
     def run(self):
         val_acc_list = []
         test_acc_list = []
-
+        max_acc = 0
         for _ in tqdm(range(self.niter)):
             self.reset()
             if torch.cuda.is_available():
@@ -139,7 +140,9 @@ class NodeClsTrainer:
             if self.verbose:
                 for met, val in evals.items():
                     print(met, val)
-
+            if evals['val_acc'] > max_acc:
+                max_acc = evals['val_acc']
+                torch.save(self.model.state_dict(), self.save_path)
             val_acc_list.append(evals['val_acc'])
             test_acc_list.append(evals['test_acc'])
 
@@ -229,7 +232,10 @@ class LinkPredTrainer:
             val_ap_list.append(evals['val_ap'])
             test_auc_list.append(evals['test_auc'])
             test_ap_list.append(evals['test_ap'])
-
+        print("mean test auc: {:.5f}".format(mean(test_auc_list)))
+        print("mean test ap: {:.5f}".format(mean(test_ap_list)))
+        print("std test auc: {:.5f}".format(std(test_auc_list)))
+        print("std test ap: {:.5f}".format(std(test_ap_list)))
         return {
             "val_auc": mean(val_auc_list),
             "val_ap": mean(val_ap_list),

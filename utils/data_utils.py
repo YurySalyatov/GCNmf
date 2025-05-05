@@ -45,6 +45,7 @@ class Data:
 class NodeClsData(Data):
     def __init__(self, dataset_str):
         super(NodeClsData, self).__init__(dataset_str)
+        self.dataset_str = dataset_str
         if dataset_str in ['cora', 'citeseer']:
             train_mask, val_mask, test_mask = split_planetoid_data(dataset_str, self.labels.size(0))
         else:  # in ['amaphoto', 'amacomp']
@@ -68,13 +69,16 @@ class NodeClsData(Data):
         self.val_mask = self.val_mask.to(device)
         self.test_mask = self.test_mask.to(device)
 
+    def clone(self):
+        return NodeClsData(self.dataset_str)
+
 
 class LinkPredData(Data):
     def __init__(self, dataset_str, val_ratio=0.05, test_ratio=0.1, seed=None):
         super(LinkPredData, self).__init__(dataset_str)
         np.random.seed(seed)
         train_edges, val_edges, test_edges = split_edges(self.G, val_ratio, test_ratio)
-        adjmat = torch.tensor(nx.to_numpy_matrix(self.G) + np.eye(self.features.size(0))).float()
+        adjmat = torch.tensor(nx.to_numpy_array(self.G) + np.eye(self.features.size(0))).float()
         negative_edges = torch.stack(torch.where(adjmat == 0))
 
         # Update edge_list and adj to train edge_list, adj, and adjmat
@@ -272,7 +276,8 @@ def split_edges(G, val_ratio, test_ratio):
 
 def adj_list_from_dict(graph):
     G = nx.from_dict_of_lists(graph)
-    coo_adj = nx.to_scipy_sparse_matrix(G).tocoo()
+    # print(G.edges)
+    coo_adj = nx.to_scipy_sparse_array(G).tocoo()
     indices = torch.from_numpy(np.vstack((coo_adj.row, coo_adj.col)).astype(np.int64))
     return indices
 
