@@ -200,7 +200,7 @@ if __name__ == '__main__':
         )
 
         # Сохраняем в файл
-        with open(f"results_final_GCNmf_{main_sigma}.txt", "w", encoding="utf-8") as f:
+        with open(f"results_final_GCNmf_{dataset_str}_{main_sigma}.txt", "w", encoding="utf-8") as f:
             f.write(table_str)
         # print(tabulate(data,
         #                headers=headers,
