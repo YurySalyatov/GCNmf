@@ -36,7 +36,7 @@ parser.add_argument('--verbose', action='store_true', help='verbose')
 
 args = parser.parse_args()
 dataset_str = args.dataset
-noise_levels = [0.1, 0.3, 0.5, 0.7, 0.9]
+noise_levels = [0, 0.1, 0.3, 0.5, 0.7, 0.9]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
     def add_noisy_features(data, noise_level, convert=True):
