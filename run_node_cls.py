@@ -36,7 +36,7 @@ parser.add_argument('--verbose', action='store_true', help='verbose')
 
 args = parser.parse_args()
 dataset_str = args.dataset
-noise_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+noise_levels = [0.1, 0.3, 0.5, 0.7, 0.9]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
     def add_noisy_features(data, noise_level, convert=True):
@@ -134,11 +134,19 @@ if __name__ == '__main__':
             fix_model.set_train()
             fix_model.set_dropout(sigma)
             entropy = []
+            var_pred = []
             for _ in range(num_samples):
                 with torch.no_grad():
                     log_probs = fix_model(perturbed_data)[perturbed_data.test_mask]
                     predictions.append(log_probs)
                     entropy.append(compute_entropy(log_probs))
+
+            for _ in range(num_samples // 10):
+                perturbed_data = add_noisy_features(perturbed_data, sigma)
+                with torch.no_grad():
+                    log_probs = fix_model(perturbed_data)
+                    exp = torch.exp(log_probs)
+                    var_pred.append(exp)
 
             predictions = torch.stack(predictions)
             entropy = torch.stack(entropy)
@@ -150,8 +158,13 @@ if __name__ == '__main__':
             au = mean_entropy_pred.mean().item()
             # print(au_arr.shape)
             # au = au_arr.mean().item()
-            results.append({'sigma': sigma, 'PU': e_pu, 'M PU': m_pu, 'AU': au})
-            print(f"Noise: {sigma:.2f} | Entropy PU: {e_pu:.4f} | Margin PU: {m_pu:.4f} | AU: {au:.4f}")
+            var_pred = torch.stack(var_pred)
+            var_au_nodes_class = torch.var(var_pred, dim=0)
+            var_au_nodes = torch.sum(var_au_nodes_class, dim=1)
+            var_au = var_au_nodes.mean()
+            results.append({'sigma': sigma, 'PU': e_pu, 'M PU': m_pu, 'AU': au, 'Var AU': var_au})
+            print(
+                f"Noise: {sigma:.2f} | Entropy PU: {e_pu:.4f} | Margin PU: {m_pu:.4f} | AU: {au:.4f} | Var AU: {var_au:.4f}")
 
 
         # Визуализация
@@ -177,8 +190,8 @@ if __name__ == '__main__':
         #     plt_res(u)
 
         data = list(zip(noise_levels[1:], [res['PU'] for res in results], [res['AU'] for res in results],
-                        [res['M PU'] for res in results]))
-        headers = ["Noisy Level", "PU", "AU", "M PU"]
+                        [res["M PU"] for res in results], [res["Var AU"] for res in results]))
+        headers = ["Noisy Level", "PU", "AU", "M PU", "Var AU"]
         table_str = tabulate(
             data,
             headers=headers,
@@ -187,7 +200,7 @@ if __name__ == '__main__':
         )
 
         # Сохраняем в файл
-        with open(f"results2_GCNmf_{main_sigma}.txt", "w", encoding="utf-8") as f:
+        with open(f"results_final_GCNmf_{main_sigma}.txt", "w", encoding="utf-8") as f:
             f.write(table_str)
         # print(tabulate(data,
         #                headers=headers,
