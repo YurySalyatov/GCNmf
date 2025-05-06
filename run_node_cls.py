@@ -36,42 +36,44 @@ parser.add_argument('--verbose', action='store_true', help='verbose')
 
 args = parser.parse_args()
 dataset_str = args.dataset
-noise_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+noise_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
+                0.95, 1]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
     def add_noisy_features(data, noise_level, convert=True):
-          noisy_data = data.clone()
-          if convert:
-              noisy_data.to(device)
-          a, b = data.features.shape
-          if convert:
+        noisy_data = data.clone()
+        if convert:
+            noisy_data.to(device)
+        a, b = data.features.shape
+        if convert:
             # Конвертируем константы в тензоры на нужном устройстве
-              feature_mean_tensor = torch.tensor(feature_mean[dataset_str], 
-                                                dtype=torch.float32, 
-                                                device=device)  # (2)
-              feature_std_tensor = torch.tensor(feature_std[dataset_str], 
-                                              dtype=torch.float32, 
-                                              device=device)    # (2)
-          else:
-              feature_mean_tensor = torch.tensor(feature_mean[dataset_str], 
-                                                dtype=torch.float32)  # (2)
-              feature_std_tensor = torch.tensor(feature_std[dataset_str], 
-                                              dtype=torch.float32)    # (2)
-          
-          # Создаем шум НА GPU (если device='cuda')
-          if convert:
-              noise = torch.randn(a, b, device=device)  # (3)
-          else:
-              noise = torch.randn(a, b)
-          
-          
-          # Вычисляем шумовую компоненту
-          noise_component = (feature_mean_tensor + 2 * noise * torch.sqrt(feature_std_tensor)) * noise_level
-          
-          # Применяем к features (уже на GPU)
-          noisy_data.features += noise_component
-          
-          return noisy_data
+            feature_mean_tensor = torch.tensor(feature_mean[dataset_str],
+                                               dtype=torch.float32,
+                                               device=device)  # (2)
+            feature_std_tensor = torch.tensor(feature_std[dataset_str],
+                                              dtype=torch.float32,
+                                              device=device)  # (2)
+        else:
+            feature_mean_tensor = torch.tensor(feature_mean[dataset_str],
+                                               dtype=torch.float32)  # (2)
+            feature_std_tensor = torch.tensor(feature_std[dataset_str],
+                                              dtype=torch.float32)  # (2)
+
+        # Создаем шум НА GPU (если device='cuda')
+        if convert:
+            noise = torch.randn(a, b, device=device)  # (3)
+        else:
+            noise = torch.randn(a, b)
+
+        # Вычисляем шумовую компоненту
+        noise_component = (feature_mean_tensor + 2 * noise * torch.sqrt(feature_std_tensor)) * noise_level * 0.1
+
+        # Применяем к features (уже на GPU)
+        noisy_data.features += noise_component
+
+        return noisy_data
+
+
     for main_sigma in noise_levels:
         data = NodeClsData(args.dataset)
         data = add_noisy_features(data, main_sigma, False)
@@ -92,6 +94,7 @@ if __name__ == '__main__':
         # fix_model.to(device)
         noisy_data = data.clone()
         noisy_data.to(device)
+
 
         def compute_entropy(log_probs):
             return -torch.sum(torch.exp(log_probs) * log_probs, dim=1)
@@ -178,9 +181,9 @@ if __name__ == '__main__':
                         [res['M PU'] for res in results]))
         headers = ["Noisy Level", "PU", "AU", "M PU"]
         table_str = tabulate(
-            data, 
-            headers=headers, 
-            tablefmt="grid", 
+            data,
+            headers=headers,
+            tablefmt="grid",
             floatfmt=".5f"
         )
 
