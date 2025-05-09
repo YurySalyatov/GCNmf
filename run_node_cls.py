@@ -157,6 +157,7 @@ if __name__ == '__main__':
             tables_dir = f"results/{dataset_name}/{method.__name__}"
             os.makedirs(tables_dir, exist_ok=True)
             results = []
+            print(method.__name__)
             for sigma in noise_levels:
                 noisy_data = method(data, sigma, False)
                 mask = generate_mask(noisy_data.features, args.rate, args.type)
