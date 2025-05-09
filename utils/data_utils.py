@@ -154,7 +154,7 @@ def universal_load_data(
         names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
         objects = []
         for name in names:
-            with open(f"./data/planetoid/ind.{dataset_str}.{name}", 'rb') as f:
+            with open(f"./data/{dataset_str}/ind.{dataset_str}.{name}", 'rb') as f:
                 if sys.version_info > (3, 0):
                     objects.append(pkl.load(f, encoding='latin1'))
                 else:
@@ -164,7 +164,7 @@ def universal_load_data(
         raise ValueError(f"Cannot load dataset: {dataset_str}")
 
     # Обработка индексов
-    test_idx_reorder = parse_index_file(f"./data/planetoid/ind.{dataset_str}.test.index")
+    test_idx_reorder = parse_index_file(f"./data/{dataset_str}/ind.{dataset_str}.test.index")
     test_idx_range = np.sort(test_idx_reorder)
 
     if dataset_str == 'citeseer':
