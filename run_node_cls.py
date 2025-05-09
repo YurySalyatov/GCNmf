@@ -12,9 +12,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
 import os
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
 
+torch.set_warn_always(False)
 feature_mean = {'citeseer': 0.0002688338, 'cora': 0.0023735422}
 feature_std = {'citeseer': 0.0006978367, 'cora': 0.0056594303}
+
+seed=42
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset',
@@ -37,7 +45,7 @@ parser.add_argument('--verbose', action='store_true', help='verbose')
 
 args = parser.parse_args()
 dataset_str = args.dataset
-noise_levels = [0, 0.1, 0.3, 0.5, 0.7, 0.9]
+noise_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
