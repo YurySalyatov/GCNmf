@@ -160,6 +160,7 @@ def feature_noise(data, percentage, convert=True):
 if __name__ == '__main__':
     methods = [feature_noise, node_noise]
     for dataset_name in ['cora', 'citeseer']:
+        print(dataset_name)
         data = NodeClsData(dataset_name)
         for method in methods:
             tables_dir = f"results/{dataset_name}/{method.__name__}"
