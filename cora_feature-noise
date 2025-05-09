@@ -1,0 +1,6 @@
+noisy: 0
+Dropout PU: 1.3566, Dropout AU: 1.2112, Dropout MU: 0.1454
+noisy: 0.1
+Dropout PU: 1.5554, Dropout AU: 1.4525, Dropout MU: 0.1029
+noisy: 0.2
+Dropout PU: 1.4747, Dropout AU: 1.3450, Dropout MU: 0.1297
