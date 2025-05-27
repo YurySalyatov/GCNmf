@@ -45,7 +45,7 @@ parser.add_argument('--verbose', action='store_true', help='verbose')
 
 args = parser.parse_args()
 dataset_str = args.dataset
-noise_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+noise_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -158,7 +158,7 @@ def feature_noise(data, percentage, convert=True):
 
 
 if __name__ == '__main__':
-    methods = [feature_noise, node_noise]
+    methods = [feature_noise]
     for dataset_name in ['cora', 'citeseer']:
         print(dataset_name)
         data = NodeClsData(dataset_name)
@@ -168,50 +168,56 @@ if __name__ == '__main__':
             results = []
             print(method.__name__)
             for sigma in noise_levels:
-                noisy_data = method(data, sigma, False)
-                mask = generate_mask(noisy_data.features, args.rate, args.type)
-                apply_mask(noisy_data.features, mask)
-                model = GCNmf(noisy_data, nhid=args.nhid, dropout=args.dropout, n_components=args.ncomp)
-                params = {
-                    'lr': args.lr,
-                    'weight_decay': args.wd,
-                    'epochs': args.epoch,
-                    'patience': args.patience,
-                    'early_stopping': True
-                }
-                trainer = NodeClsTrainer(noisy_data, model, params, niter=10, verbose=args.verbose)
-                trainer.run()
-                model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
-                model.to(device)
-                noisy_data.to(device)
+                one_result = {"sigma": sigma}
+                pu_arr = []
+                acc_arr = []
+                for _ in range(5):
+                    noisy_data = method(data, sigma, False)
+                    model = GCNmf(noisy_data, nhid=args.nhid, dropout=args.dropout, n_components=args.ncomp)
+                    params = {
+                        'lr': args.lr,
+                        'weight_decay': args.wd,
+                        'epochs': args.epoch,
+                        'patience': args.patience,
+                        'early_stopping': True
+                    }
+                    trainer = NodeClsTrainer(noisy_data, model, params, niter=10, verbose=args.verbose)
+                    trainer.run()
+                    model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
+                    model.to(device)
+                    noisy_data.to(device)
 
+                    # Оценка PU
+                    num_samples = 20
+                    predictions = []
+                    model.train()
+                    for _ in range(num_samples):
+                        with torch.no_grad():
+                            log_probs = model(data)
+                            predictions.append(torch.exp(log_probs[data.test_mask]))
 
-                def compute_entropy(log_probs):
-                    return -torch.sum(torch.exp(log_probs) * log_probs, dim=1)
+                    predictions = torch.stack(predictions)
+                    mean_pred = predictions.mean(dim=0)
+                    mean_pred_entropy = -torch.sum(mean_pred * torch.log(mean_pred + 1e-18), dim=1)
+                    pu = mean_pred_entropy.mean()
+                    pu_arr.append(pu)
+                    acc_arr.append(model.max_acc)
+                pu_arr = torch.stack(pu_arr)
+                acc_arr = torch.stack(acc_arr)
+                mean_pu = pu_arr.mean().item()
+                var_pu = pu_arr.var().item()
+                one_result[f" PU"] = mean_pu
+                one_result[f" var PU"] = var_pu
+                one_result[f" max acc"] = acc_arr.max().item()
+                one_result[f" min acc"] = acc_arr.min().item()
+                one_result[f" mean acc"] = acc_arr.mean().item()
+                one_result[f" var acc"] = acc_arr.var().item()
+                print(one_result)
+                results.append(one_result)
+            # plot_dir = f"results/{dataset_name}/{method.__name__}/plots"
+            # os.makedirs(plot_dir, exist_ok=True)
+            table_file = f"results/{dataset_name}/{method.__name__}/table_experiment2.txt"
+            os.makedirs(f"results/{dataset_name}/{method.__name__}", exist_ok=True)
 
-
-                # Оценка AU (100 итераций с шумом)
-                num_samples = 100
-                model.train()
-                model.set_train()
-                entropy = []
-                predictions = []
-                for _ in range(num_samples):
-                    with torch.no_grad():
-                        log_probs = model(noisy_data)
-                        predictions.append(torch.exp(log_probs))
-                        entropy.append(compute_entropy(log_probs))
-
-                predictions = torch.stack(predictions)
-                entropy = torch.stack(entropy)
-                mean_pred = predictions.mean(dim=0)
-                mean_pred_entropy = -torch.sum(mean_pred * torch.log(mean_pred), dim=1)
-                mean_entropy_pred = entropy.mean(dim=0)
-                d_au = mean_entropy_pred.mean().item()
-                d_pu = mean_pred_entropy.mean().item()
-                mu = d_pu - d_au
-                results.append(
-                    {'sigma': sigma, "Dropout PU": d_pu, 'Dropout AU': d_au, "Dropout MU": mu})
-                print(f"noisy: {sigma}")
-                print(f"Dropout PU: {d_pu:.4f}, Dropout AU: {d_au:.4f}, Dropout MU: {mu:.4f}")
-                save_table(results, tables_dir + f"/GCNmf_experiment2.txt")
+            # plot_all_results(results, save_path=plot_dir)
+            save_table(results, filename=table_file)
