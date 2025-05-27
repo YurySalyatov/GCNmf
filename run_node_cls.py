@@ -173,7 +173,7 @@ if __name__ == '__main__':
                     }
                     trainer = NodeClsTrainer(noisy_data, model, params, niter=20, verbose=args.verbose)
                     max_acc = trainer.run()['max_acc']
-                    model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
+                    model.load_state_dict(model.state_dict())
                     model.to(device)
                     noisy_data.to(device)
 
