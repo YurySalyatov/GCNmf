@@ -161,6 +161,7 @@ if __name__ == '__main__':
                 acc_arr = []
                 for _ in range(5):
                     noisy_data = method(data, sigma)
+                    noisy_data.to('cpu')
                     model = GCNmf(noisy_data, nhid=args.nhid, dropout=args.dropout, n_components=args.ncomp)
                     params = {
                         'lr': args.lr,
