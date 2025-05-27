@@ -145,7 +145,7 @@ class NodeClsTrainer:
                 max_acc = evals['val_acc']
                 torch.save(self.model.state_dict(), self.save_path)
                 if max_acc > 0.6:
-                    breakg
+                    break
             val_acc_list.append(evals['val_acc'])
             test_acc_list.append(evals['test_acc'])
 
