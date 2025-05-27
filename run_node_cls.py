@@ -191,7 +191,7 @@ if __name__ == '__main__':
                     mean_pred_entropy = -torch.sum(mean_pred * torch.log(mean_pred + 1e-18), dim=1)
                     pu = mean_pred_entropy.mean()
                     pu_arr.append(pu)
-                    acc_arr.append(model.max_acc)
+                    acc_arr.append(max_acc)
                 pu_arr = torch.stack(pu_arr)
                 acc_arr = torch.stack(acc_arr)
                 mean_pu = pu_arr.mean().item()
