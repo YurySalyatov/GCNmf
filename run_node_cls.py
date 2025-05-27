@@ -115,7 +115,7 @@ def node_noise(data, percentage, convert=True):
 def feature_noise(data, percentage):
     noisy_data = data.clone()
     noisy_data.to(device)
-    tensor = noisy_data.x
+    tensor = noisy_data.features
     if percentage <= 0:
         return noisy_data
 
@@ -141,7 +141,7 @@ def feature_noise(data, percentage):
     noised_tensor[:, selected_features] = replacement
     # noised_tensor[:, selected_features] = torch.rand_like(noised_tensor[:, selected_features])
     # print(noised_tensor[:, selected_features])
-    noisy_data.x = noised_tensor
+    noisy_data.features = noised_tensor
     return noisy_data
 
 
