@@ -39,6 +39,8 @@ class EarlyStopping:
             self.best_val_loss = min(self.best_val_loss, evals['val_loss'])
             self.best_val_acc = max(self.best_val_acc, evals['val_acc'])
             self.counter = 0
+            if self.best_val_acc > 0.6:
+                return True
         else:
             self.counter += 1
         stop = False
@@ -144,8 +146,6 @@ class NodeClsTrainer:
             if evals['val_acc'] > max_acc:
                 max_acc = evals['val_acc']
                 torch.save(self.model.state_dict(), self.save_path)
-                if max_acc > 0.6:
-                    break
             val_acc_list.append(evals['val_acc'])
             test_acc_list.append(evals['test_acc'])
 
