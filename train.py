@@ -65,6 +65,7 @@ class NodeClsTrainer:
             self.stop_checker = EarlyStopping(params['patience'], verbose)
 
         self.data.to(device)
+        self.model.to(device)
         self.save_path = save_path
         self.max_acc = 0
 

@@ -17,8 +17,6 @@ warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=FutureWarning)
 
 torch.set_warn_always(False)
-feature_mean = {'citeseer': 0.0002688338, 'cora': 0.0023735422}
-feature_std = {'citeseer': 0.0006978367, 'cora': 0.0056594303}
 
 seed=42
 torch.manual_seed(seed)
@@ -114,46 +112,36 @@ def node_noise(data, percentage, convert=True):
     return noisy_data
 
 
-def feature_noise(data, percentage, convert=True):
-    """
-    Заменяет случайный процент фичей для всех вершин на значения из общего распределения тензора
-    Args:
-        tensor: исходный тензор (num_nodes, num_features)
-        percentage: процент фичей для замены (0.0 - 1.0)
-    Returns:
-        тензор с шумом
-    """
-    tensor = data.features
+def feature_noise(data, percentage):
+    noisy_data = data.clone()
+    noisy_data.to(device)
+    tensor = noisy_data.x
     if percentage <= 0:
-        res = data.clone()
-        if convert:
-            res.to(device)
-        return res
+        return noisy_data
 
     num_features = tensor.size(1)
+    # print("num_features", num_features)
     num_selected_features = int(percentage * num_features)
-
+    # print("num_selected_features", num_selected_features)
     if num_selected_features == 0:
-        res = data.clone()
-        if convert:
-            res.to(device)
-        return res
+        return noisy_data
 
     # Выбираем случайные фичи
-    selected_features = torch.randperm(num_features)[:num_selected_features]
-
+    selected_features = torch.randperm(num_features, device=device)[:num_selected_features]
+    # print("selected_features", selected_features)
     # Генерируем значения для замены
     flattened = tensor.flatten()
-    shuffled_values = flattened[torch.randperm(len(flattened))][:tensor.size(0) * num_selected_features]
+    shuffled_values = flattened[torch.randperm(len(flattened), device=device)][:tensor.size(0) * num_selected_features]
     replacement = shuffled_values.view(tensor.size(0), num_selected_features)
 
     # Создаем копию и применяем шум
     noised_tensor = tensor.clone()
+    # print("noisy tensor")
+    # print(noised_tensor[:, selected_features])
     noised_tensor[:, selected_features] = replacement
-    noisy_data = data.clone()
-    noisy_data.features = noised_tensor
-    if convert:
-        noisy_data.to(device)
+    # noised_tensor[:, selected_features] = torch.rand_like(noised_tensor[:, selected_features])
+    # print(noised_tensor[:, selected_features])
+    noisy_data.x = noised_tensor
     return noisy_data
 
 
@@ -172,7 +160,7 @@ if __name__ == '__main__':
                 pu_arr = []
                 acc_arr = []
                 for _ in range(5):
-                    noisy_data = method(data, sigma, False)
+                    noisy_data = method(data, sigma)
                     model = GCNmf(noisy_data, nhid=args.nhid, dropout=args.dropout, n_components=args.ncomp)
                     params = {
                         'lr': args.lr,
