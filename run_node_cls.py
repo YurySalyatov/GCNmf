@@ -13,12 +13,13 @@ import numpy as np
 from tabulate import tabulate
 import os
 import warnings
+
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=FutureWarning)
 
 torch.set_warn_always(False)
 
-seed=42
+seed = 42
 torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
@@ -37,7 +38,7 @@ parser.add_argument('--dropout', default=0.5, type=float, help='dropout rate')
 parser.add_argument('--ncomp', default=5, type=int, help='the number of Gaussian components')
 parser.add_argument('--lr', default=0.005, type=float, help='learning rate')
 parser.add_argument('--wd', default=1e-2, type=float, help='weight decay')
-parser.add_argument('--epoch', default=500, type=int, help='the number of training epoch')
+parser.add_argument('--epoch', default=10000, type=int, help='the number of training epoch')
 parser.add_argument('--patience', default=100, type=int, help='patience for early stopping')
 parser.add_argument('--verbose', action='store_true', help='verbose')
 
@@ -170,7 +171,7 @@ if __name__ == '__main__':
                         'patience': args.patience,
                         'early_stopping': True
                     }
-                    trainer = NodeClsTrainer(noisy_data, model, params, niter=10, verbose=args.verbose)
+                    trainer = NodeClsTrainer(noisy_data, model, params, niter=20, verbose=args.verbose)
                     trainer.run()
                     model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
                     model.to(device)
@@ -182,7 +183,7 @@ if __name__ == '__main__':
                     model.train()
                     for _ in range(num_samples):
                         with torch.no_grad():
-                            log_probs = model(data)
+                            log_probs = model(noisy_data)
                             predictions.append(torch.exp(log_probs[data.test_mask]))
 
                     predictions = torch.stack(predictions)
