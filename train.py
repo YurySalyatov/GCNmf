@@ -67,7 +67,6 @@ class NodeClsTrainer:
         self.data.to(device)
         self.model.to(device)
         self.save_path = save_path
-        self.max_acc = 0
 
     def reset(self):
         self.model.to(device).reset_parameters()
@@ -144,7 +143,6 @@ class NodeClsTrainer:
                     print(met, val)
             if evals['val_acc'] > max_acc:
                 max_acc = evals['val_acc']
-                self.max_acc = max_acc
                 torch.save(self.model.state_dict(), self.save_path)
             val_acc_list.append(evals['val_acc'])
             test_acc_list.append(evals['test_acc'])
@@ -152,6 +150,7 @@ class NodeClsTrainer:
         print(mean(test_acc_list))
         print(std(test_acc_list))
         return {
+            'max_acc': max_acc,
             'val_acc': mean(val_acc_list),
             'test_acc': mean(test_acc_list),
             'test_acc_std': std(test_acc_list)

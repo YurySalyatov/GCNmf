@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         'early_stopping': True
                     }
                     trainer = NodeClsTrainer(noisy_data, model, params, niter=20, verbose=args.verbose)
-                    trainer.run()
+                    max_acc = trainer.run()['max_acc']
                     model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
                     model.to(device)
                     noisy_data.to(device)
@@ -191,7 +191,7 @@ if __name__ == '__main__':
                     mean_pred_entropy = -torch.sum(mean_pred * torch.log(mean_pred + 1e-18), dim=1)
                     pu = mean_pred_entropy.mean()
                     pu_arr.append(pu)
-                    acc_arr.append(model.max_acc)
+                    acc_arr.append(max_acc)
                 pu_arr = torch.stack(pu_arr)
                 acc_arr = torch.stack(acc_arr)
                 mean_pu = pu_arr.mean().item()
