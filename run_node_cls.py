@@ -172,7 +172,7 @@ if __name__ == '__main__':
                         'early_stopping': True
                     }
                     trainer = NodeClsTrainer(noisy_data, model, params, niter=20, verbose=args.verbose)
-                    trainer.run()
+                    max_acc = trainer.run()['max_acc']
                     model.load_state_dict(torch.load("trained_model/without_noisy.pkl"))
                     model.to(device)
                     noisy_data.to(device)
